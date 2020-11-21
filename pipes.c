@@ -20,7 +20,10 @@
 #define RIGHT 	3
 
 /* percent change a pipe has to change direction */
-#define TURN_CHANCE 5
+#define TURN_CHANCE 10
+
+/* number of pipes to spawn before clearing the screen */
+#define MAX_PIPES 60
 
 typedef struct {
 	int y;
@@ -198,15 +201,30 @@ void update_pipe(pipe* p) {
 
 void main_loop() {
 	pipe* p = init_pipe();
+	int pipe_count = 1;
 	while (true) {
+
 		char c = getch();
-		if (c != -1) break;
-		if (p == NULL) p = init_pipe();
+		if (c != -1) {
+			break;
+		} 
+
+		if (pipe_count > MAX_PIPES) {
+			erase();
+			pipe_count = 0;
+		}
+
+		if (p == NULL){
+			p = init_pipe();
+			pipe_count++;
+		} 
+
 		update_pipe(p);
 		if (out_of_bounds(p -> curr.y, p -> curr.x)) {
 			attroff(COLOR_PAIR(p -> color));
 			p = NULL;
 		}
+
 		napms(1000/FRAME_RATE);
 	}
 }
