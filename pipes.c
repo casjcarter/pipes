@@ -6,7 +6,6 @@
 #include <ncurses.h>
 #include <time.h>
 
-
 #define ERR_CHAR "\u2717"
 
 #define NORM_VLINE    "\u2502"
@@ -30,13 +29,6 @@
 #define DOUBLE_LLCORNER "\u255a"
 #define DOUBLE_LRCORNER "\u255d"
 
-/* TODO: Make options for turn chance, max pipes, and frame rate */
-/* percent change a pipe has to change direction */
-#define TURN_CHANCE 10
-
-#define FRAME_RATE 60
-
-/* number of pipes to spawn before clearing the screen */
 #define MAX_PIPES 60
 
 enum direction {
@@ -75,12 +67,21 @@ enum pipe_attr {
 };
 
 static enum pipe_attr style = NORMAL;
+/* percent change a pipe has to change direction */
+static int turn_chance = 10;
+/* rate of update in frames per second */
+static int frame_rate = 60;
+/* number of pipes to spawn before clearing the screen */
+static int max_pipes = 60;
 
 void print_help() {
     printf("Usage: pipes [OPTIONS]\n");
     printf("  -h --help\t\tPrint this message and exit.\n");
     printf("  -b --bold\t\tUse bold box drawing characters.\n");
     printf("  -d --double\t\tUse double box drawing characters.\n");
+    printf("  -t --turn-chance\tThe percent chance that a pipe will change direction.\n");
+    printf("  -f --frame-rate\tThe rate of update in frames per second.\n");
+    printf("  -m --max-pipes\tThe number of pipes that spawn before clearing the screen.\n");
 }
 
 /* start, run, and end program */
@@ -277,7 +278,7 @@ void update_pipe(pipe* p) {
 	p -> prev = p -> curr;
 	p -> curr = move_position(p -> curr);
 
-	if (rand() % 100 < TURN_CHANCE) {
+	if (rand() % 100 < turn_chance) {
 		p -> curr.dir = random_direction(p -> curr.dir);
 	}
 }
@@ -292,7 +293,7 @@ void main_loop() {
 			break;
 		}
 
-		if (pipe_count > MAX_PIPES) {
+		if (pipe_count > max_pipes) {
 			erase();
 			pipe_count = 0;
 		}
@@ -308,7 +309,7 @@ void main_loop() {
 			p = NULL;
 		}
 
-		napms(1000/FRAME_RATE);
+		napms(1000/frame_rate);
 	}
 }
 
@@ -324,6 +325,18 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[i], "-d") == 0
             || strcmp(argv[i], "--double") == 0) {
             style = DOUBLE;
+        } else if (strcmp(argv[i], "-t") == 0
+            || strcmp(argv[i], "--turn-chance") == 0) {
+            turn_chance = atoi(argv[i+1]);
+            ++i;
+        } else if (strcmp(argv[i], "-f") == 0
+            || strcmp(argv[i], "--frame-rate") == 0) {
+            frame_rate = atoi(argv[i+1]);
+            ++i;
+        } else if (strcmp(argv[i], "-m") == 0
+            || strcmp(argv[i], "--max-pipes") == 0) {
+            max_pipes = atoi(argv[i+1]);
+            ++i;
         } else {
             printf("Invalid argument (%s)\n", argv[i]);
             exit(1);
