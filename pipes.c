@@ -6,21 +6,6 @@
 #include <ncurses.h>
 #include <time.h>
 
-#define FRAME_RATE 60
-
-#define RED 	1
-#define GREEN 	2
-#define YELLOW 	3
-#define BLUE 	4
-#define MAGENTA	5
-#define CYAN 	6
-#define WHITE	7
-
-/* TODO: Change these to an enum */
-#define UP 		0
-#define LEFT 	1
-#define DOWN 	2
-#define RIGHT 	3
 
 #define ERR_CHAR "\u2717"
 
@@ -45,22 +30,42 @@
 #define DOUBLE_LLCORNER "\u255a"
 #define DOUBLE_LRCORNER "\u255d"
 
+/* TODO: Make options for turn chance, max pipes, and frame rate */
 /* percent change a pipe has to change direction */
 #define TURN_CHANCE 10
+
+#define FRAME_RATE 60
 
 /* number of pipes to spawn before clearing the screen */
 #define MAX_PIPES 60
 
+enum direction {
+    UP,
+    LEFT,
+    DOWN,
+    RIGHT
+};
+
+enum color {
+    RED 	= 1,
+    GREEN 	= 2,
+    YELLOW 	= 3,
+    BLUE 	= 4,
+    MAGENTA	= 5,
+    CYAN 	= 6,
+    WHITE	= 7
+};
+
 typedef struct {
 	int y;
 	int x;
-	int dir;
+	enum direction dir;
 } vector;
 
 typedef struct {
 	vector curr;
 	vector prev;
-	int color;
+	enum color col;
 } pipe;
 
 enum pipe_attr {
@@ -122,8 +127,8 @@ void init_rand() {
 }
 
 /* chooses a random color pair */
-int random_color() {
-	int r = (rand() % 7) + 1;
+enum color random_color() {
+	enum color r = (rand() % 7) + 1;
 	return r;
 }
 
@@ -140,7 +145,7 @@ bool out_of_bounds(int y, int x) {
 vector random_start() {
 	int y;
 	int x;
-	int dir;
+	enum direction dir;
 
 	int r = rand() % 4;
 	switch (r) {
@@ -169,7 +174,7 @@ vector random_start() {
 }
 
 /* returns a random direction adjacent to dir */
-int random_direction(int dir) {
+enum direction random_direction(enum direction dir) {
 	if (rand() % 2 == 1) {
 		return abs((dir - 1) % 4);
 	} else {
@@ -178,7 +183,7 @@ int random_direction(int dir) {
 }
 
 /* get the char to print next from current and previous directions */
-char *char_from_dirs(int curr, int prev) {
+char *char_from_dirs(enum direction curr, enum direction prev) {
     char *hline, *vline, *ulcorner, *urcorner, *llcorner, *lrcorner;
     switch (style)
     {
@@ -258,8 +263,8 @@ pipe* init_pipe() {
 	pipe* p = (pipe*)malloc(sizeof(pipe));
 	p -> curr = random_start();
 	p -> prev = p -> curr;
-	p -> color = random_color();
-	attron(COLOR_PAIR(p -> color));
+	p -> col = random_color();
+	attron(COLOR_PAIR(p -> col));
 	return p;
 }
 
@@ -299,7 +304,7 @@ void main_loop() {
 
 		update_pipe(p);
 		if (out_of_bounds(p -> curr.y, p -> curr.x)) {
-			attroff(COLOR_PAIR(p -> color));
+			attroff(COLOR_PAIR(p -> col));
 			p = NULL;
 		}
 
