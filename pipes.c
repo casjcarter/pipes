@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <locale.h>
 #include <ncurses.h>
 #include <time.h>
 
@@ -14,10 +16,34 @@
 #define CYAN 	6
 #define WHITE	7
 
+/* TODO: Change these to an enum */
 #define UP 		0
 #define LEFT 	1
 #define DOWN 	2
 #define RIGHT 	3
+
+#define ERR_CHAR "\u2717"
+
+#define NORM_VLINE    "\u2502"
+#define NORM_HLINE    "\u2500"
+#define NORM_ULCORNER "\u250c"
+#define NORM_URCORNER "\u2510"
+#define NORM_LLCORNER "\u2514"
+#define NORM_LRCORNER "\u2518"
+
+#define BOLD_VLINE    "\u2503"
+#define BOLD_HLINE    "\u2501"
+#define BOLD_ULCORNER "\u250f"
+#define BOLD_URCORNER "\u2513"
+#define BOLD_LLCORNER "\u2517"
+#define BOLD_LRCORNER "\u251b"
+
+#define DOUBLE_VLINE    "\u2551"
+#define DOUBLE_HLINE    "\u2550"
+#define DOUBLE_ULCORNER "\u2554"
+#define DOUBLE_URCORNER "\u2557"
+#define DOUBLE_LLCORNER "\u255a"
+#define DOUBLE_LRCORNER "\u255d"
 
 /* percent change a pipe has to change direction */
 #define TURN_CHANCE 10
@@ -36,6 +62,21 @@ typedef struct {
 	vector prev;
 	int color;
 } pipe;
+
+enum pipe_attr {
+    NORMAL,
+    BOLD,
+    DOUBLE
+};
+
+static enum pipe_attr style = NORMAL;
+
+void print_help() {
+    printf("Usage: pipes [OPTIONS]\n");
+    printf("  -h --help\t\tPrint this message and exit.\n");
+    printf("  -b --bold\t\tUse bold box drawing characters.\n");
+    printf("  -d --double\t\tUse double box drawing characters.\n");
+}
 
 /* start, run, and end program */
 
@@ -137,21 +178,58 @@ int random_direction(int dir) {
 }
 
 /* get the char to print next from current and previous directions */
-char char_from_dirs(int curr, int prev) {
+char *char_from_dirs(int curr, int prev) {
+    char *hline, *vline, *ulcorner, *urcorner, *llcorner, *lrcorner;
+    switch (style)
+    {
+        case NORMAL:
+            hline    = NORM_HLINE;
+            vline    = NORM_VLINE;
+            ulcorner = NORM_ULCORNER;
+            urcorner = NORM_URCORNER;
+            llcorner = NORM_LLCORNER;
+            lrcorner = NORM_LRCORNER;
+            break;
+        case BOLD:
+            hline    = BOLD_HLINE;
+            vline    = BOLD_VLINE;
+            ulcorner = BOLD_ULCORNER;
+            urcorner = BOLD_URCORNER;
+            llcorner = BOLD_LLCORNER;
+            lrcorner = BOLD_LRCORNER;
+            break;
+        case DOUBLE:
+            hline    = DOUBLE_HLINE;
+            vline    = DOUBLE_VLINE;
+            ulcorner = DOUBLE_ULCORNER;
+            urcorner = DOUBLE_URCORNER;
+            llcorner = DOUBLE_LLCORNER;
+            lrcorner = DOUBLE_LRCORNER;
+            break;
+        default:
+            hline    = NORM_HLINE;
+            vline    = NORM_VLINE;
+            ulcorner = NORM_ULCORNER;
+            urcorner = NORM_URCORNER;
+            llcorner = NORM_LLCORNER;
+            lrcorner = NORM_LRCORNER;
+            break;
+    }
+
 	if ((prev == LEFT && curr == LEFT) || (prev == RIGHT && curr == RIGHT)) {
-		return ACS_HLINE;
+        return hline;
 	} else if ((prev == UP && curr == UP) || (prev == DOWN && curr == DOWN)) {
-		return ACS_VLINE;
+		return vline;
 	} else if ((prev == UP && curr == RIGHT) || (prev == LEFT && curr == DOWN)) {
-		return ACS_ULCORNER;
+		return ulcorner;
 	} else if ((prev == UP && curr == LEFT) || (prev == RIGHT && curr == DOWN)) {
-		return ACS_URCORNER;
+		return urcorner;
 	} else if ((prev == DOWN && curr == RIGHT) || (prev == LEFT && curr == UP)) {
-		return ACS_LLCORNER;
+		return llcorner;
 	} else if ((prev == DOWN && curr == LEFT) || (prev == RIGHT && curr == UP)) {
-		return ACS_LRCORNER;
+		return lrcorner;
 	} else {
-		return ACS_DIAMOND;
+		return ERR_CHAR;
 	}
 }
 
@@ -188,8 +266,8 @@ pipe* init_pipe() {
 /* move the curs to new pos and print pipe char */
 void update_pipe(pipe* p) {
 
-	char to_print = char_from_dirs(p -> curr.dir, p -> prev.dir);
-	mvaddch(p -> curr.y, p -> curr.x, to_print);
+	char *to_print = char_from_dirs(p -> curr.dir, p -> prev.dir);
+	mvaddstr(p -> curr.y, p -> curr.x, to_print);
 
 	p -> prev = p -> curr;
 	p -> curr = move_position(p -> curr);
@@ -229,7 +307,24 @@ void main_loop() {
 	}
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "-h") == 0
+            || strcmp(argv[i], "--help") == 0) {
+            print_help();
+            exit(0);
+        } else if (strcmp(argv[i], "-b") == 0
+            || strcmp(argv[i], "--bold") == 0) {
+            style = BOLD;
+        } else if (strcmp(argv[i], "-d") == 0
+            || strcmp(argv[i], "--double") == 0) {
+            style = DOUBLE;
+        } else {
+            printf("Invalid argument (%s)\n", argv[i]);
+            exit(1);
+        }
+    }
+    setlocale(LC_ALL, "");
 	init_rand();
 	start_ncurses();
 	start_curs_color();
