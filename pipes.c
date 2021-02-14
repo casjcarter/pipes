@@ -82,7 +82,7 @@ void init_rand() {
 
 /* chooses a random color pair */
 int random_color() {
-	int r = (rand() % 7) + 1; 
+	int r = (rand() % 7) + 1;
 	return r;
 }
 
@@ -205,9 +205,9 @@ void main_loop() {
 	while (true) {
 
 		char c = getch();
-		if (c != -1) {
+		if (c == 'q') {
 			break;
-		} 
+		}
 
 		if (pipe_count > MAX_PIPES) {
 			erase();
@@ -217,7 +217,7 @@ void main_loop() {
 		if (p == NULL){
 			p = init_pipe();
 			pipe_count++;
-		} 
+		}
 
 		update_pipe(p);
 		if (out_of_bounds(p -> curr.y, p -> curr.x)) {
