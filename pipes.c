@@ -73,15 +73,18 @@ static int turn_chance = 10;
 static int frame_rate = 60;
 /* number of pipes to spawn before clearing the screen */
 static int max_pipes = 60;
+/* whether or not to clear the screen when a key is pressed or the terminal is resized */
+static bool clear_on_press = false;
 
 void print_help() {
     printf("Usage: pipes [OPTIONS]\n");
-    printf("  -h --help\t\tPrint this message and exit.\n");
-    printf("  -b --bold\t\tUse bold box drawing characters.\n");
-    printf("  -d --double\t\tUse double box drawing characters.\n");
-    printf("  -t --turn-chance\tThe percent chance that a pipe will change direction.\n");
-    printf("  -f --frame-rate\tThe rate of update in frames per second.\n");
-    printf("  -m --max-pipes\tThe number of pipes that spawn before clearing the screen.\n");
+    printf("  -h --help\t\t\tPrint this message and exit.\n");
+    printf("  -b --bold\t\t\tUse bold box drawing characters.\n");
+    printf("  -d --double\t\t\tUse double box drawing characters.\n");
+    printf("  -c --clear\t\t\tClear the screen when any key but 'q' is pressed, or the terminal is resized.\n");
+    printf("  -t --turn-chance [int]\tThe percent chance that a pipe will change direction.\n");
+    printf("  -f --frame-rate  [int]\tThe rate of update in frames per second.\n");
+    printf("  -m --max-pipes   [int]\tThe number of pipes that spawn before clearing the screen.\n");
 }
 
 /* start, run, and end program */
@@ -283,6 +286,7 @@ void update_pipe(pipe* p) {
 	}
 }
 
+
 void main_loop() {
 	pipe* p = init_pipe();
 	int pipe_count = 1;
@@ -291,7 +295,11 @@ void main_loop() {
 		char c = getch();
 		if (c == 'q') {
 			break;
-		}
+		} else if (c != -1 && clear_on_press) {
+            p = NULL;
+			erase();
+			pipe_count = 0;
+        }
 
 		if (pipe_count > max_pipes) {
 			erase();
@@ -325,6 +333,9 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[i], "-d") == 0
             || strcmp(argv[i], "--double") == 0) {
             style = DOUBLE;
+        } else if (strcmp(argv[i], "-c") == 0
+            || strcmp(argv[i], "--clear") == 0) {
+            clear_on_press = true;
         } else if (strcmp(argv[i], "-t") == 0
             || strcmp(argv[i], "--turn-chance") == 0) {
             turn_chance = atoi(argv[i+1]);
