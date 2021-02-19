@@ -299,6 +299,7 @@ void main_loop() {
             p = NULL;
 			erase();
 			pipe_count = 0;
+            continue;
         }
 
 		if (pipe_count > max_pipes) {
